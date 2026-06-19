@@ -2,21 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ---------------------------------------------------------------------
+   Fonts: a clean system stack (no next/font/google — keeps `next build`
+   working with zero network access and zero env vars set).
+--------------------------------------------------------------------- */
 :root {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji";
 }
 
+/* This app is ALWAYS dark. */
 html {
   color-scheme: dark;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   @apply bg-bg-base text-content-primary antialiased;
   font-family: var(--font-sans);
+  /* Kill the grey tap flash on mobile for a native, premium feel. */
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Thin, dark scrollbars to match the terminal aesthetic. */
+/* On-brand text selection. */
+::selection {
+  background: #f7931a33;
+  color: #ffffff;
+}
+
+/* ---------------------------------------------------------------------
+   Thin, dark scrollbars to match the terminal aesthetic.
+--------------------------------------------------------------------- */
 * {
   scrollbar-width: thin;
   scrollbar-color: #2a3647 transparent;
@@ -24,6 +42,9 @@ body {
 *::-webkit-scrollbar {
   width: 10px;
   height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
 }
 *::-webkit-scrollbar-thumb {
   background: #2a3647;
@@ -34,4 +55,41 @@ body {
 *::-webkit-scrollbar-thumb:hover {
   background: #3a4a60;
   background-clip: content-box;
+}
+
+/* ---------------------------------------------------------------------
+   Remove the native number-input spinner arrows everywhere — prices and
+   sizes are typed, not nudged.
+--------------------------------------------------------------------- */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* ---------------------------------------------------------------------
+   Small global polish.
+--------------------------------------------------------------------- */
+/* Tabular figures + tighter tracking feel right for a trading terminal. */
+.font-mono {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "zero" 1;
+}
+
+/* Respect reduced-motion preferences. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
