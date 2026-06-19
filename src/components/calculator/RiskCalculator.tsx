@@ -362,7 +362,7 @@ export function RiskCalculator() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
-            Risk Calculator
+            New Trade
           </p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-content-primary sm:text-3xl">
             Position Size

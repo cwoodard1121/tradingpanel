@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 import { Card } from "@/components/ui/Card";
 import { Field, NumberInput } from "@/components/ui/Input";
 import { Segmented } from "@/components/ui/Segmented";
@@ -8,7 +10,15 @@ import type { Settings, TrailingMode } from "@/lib/types";
 import { SaveBar } from "@/components/settings/SaveBar";
 import { useGroupDraft } from "@/components/settings/useGroupDraft";
 
+type ClassValue = string | false | null | undefined;
+function cn(...classes: ClassValue[]): string {
+  return classes.filter(Boolean).join(" ");
+}
+
+type AccountPhase = Settings["account_phase"];
+
 type PropFirmDraft = {
+  account_phase: AccountPhase;
   daily_loss_pct: number | null;
   trailing_dd_pct: number | null;
   profit_target_pct: number | null;
@@ -38,6 +48,72 @@ function InfoGlyph() {
     </svg>
   );
 }
+
+/** Two-line label for the trading-phase pills: bold word over a tiny uppercase tag. */
+function PhaseLabel({ title, tag }: { title: string; tag: string }) {
+  return (
+    <span className="flex flex-col items-center leading-tight">
+      <span className="text-sm font-semibold">{title}</span>
+      <span className="text-[10px] font-semibold uppercase tracking-[0.14em] opacity-70">
+        {tag}
+      </span>
+    </span>
+  );
+}
+
+/** Contextual, softly-tinted explainer that reacts to the selected phase. */
+function PhaseNote({ phase }: { phase: AccountPhase }) {
+  const challenge = phase === "challenge";
+  return (
+    <div
+      className={cn(
+        "flex items-start gap-2.5 rounded-xl border px-3.5 py-2.5 text-xs leading-relaxed transition-colors duration-200",
+        challenge
+          ? "border-brand/30 bg-brand-soft"
+          : "border-profit/30 bg-profit-soft",
+      )}
+    >
+      <span
+        aria-hidden="true"
+        className={cn(
+          "mt-1 h-1.5 w-1.5 shrink-0 rounded-full",
+          challenge ? "bg-brand" : "bg-profit",
+        )}
+      />
+      <span className="text-content-secondary">
+        {challenge ? (
+          <>
+            <b className="text-content-primary">Evaluation phase.</b> You&apos;re
+            working toward the profit target to get funded — the limits below are
+            exactly what you&apos;re judged against.
+          </>
+        ) : (
+          <>
+            <b className="text-content-primary">Live funded account.</b>{" "}
+            You&apos;re taking payouts now — confirm your firm&apos;s exact rules
+            for daily loss, trailing drawdown and consistency.
+          </>
+        )}
+      </span>
+    </div>
+  );
+}
+
+const PHASE_TOOLTIP: ReactNode = (
+  <span className="block space-y-1 text-left">
+    <span className="block">
+      <b className="text-content-primary">Challenge</b> — working toward the
+      profit target to get funded.
+    </span>
+    <span className="block">
+      <b className="text-content-primary">Funded</b> — live account taking
+      payouts.
+    </span>
+    <span className="block text-content-secondary">
+      Always confirm your firm&apos;s exact rules.
+    </span>
+  </span>
+);
 
 function PctField({
   label,
@@ -71,14 +147,15 @@ function PctField({
 }
 
 /**
- * PropFirmGroup — the funded-account guardrails analytics measures against:
- * daily loss limit, trailing drawdown, profit target, and how the trailing
- * drawdown is anchored.
+ * PropFirmGroup — which phase the account is in (Challenge vs Funded) plus the
+ * guardrails analytics measures against: daily loss limit, trailing drawdown,
+ * profit target, and how the trailing drawdown is anchored.
  */
 export function PropFirmGroup({ settings, updateSettings }: PropFirmGroupProps) {
   const { draft, setField, dirty, saving, saved, save, reset } =
     useGroupDraft<PropFirmDraft>(
       {
+        account_phase: settings.account_phase,
         daily_loss_pct: settings.daily_loss_pct,
         trailing_dd_pct: settings.trailing_dd_pct,
         profit_target_pct: settings.profit_target_pct,
@@ -86,6 +163,7 @@ export function PropFirmGroup({ settings, updateSettings }: PropFirmGroupProps) 
       },
       async (d) => {
         await updateSettings({
+          account_phase: d.account_phase,
           daily_loss_pct: d.daily_loss_pct ?? 0,
           trailing_dd_pct: d.trailing_dd_pct ?? 0,
           profit_target_pct: d.profit_target_pct ?? 0,
@@ -97,28 +175,52 @@ export function PropFirmGroup({ settings, updateSettings }: PropFirmGroupProps) 
   return (
     <Card
       title="Prop-firm limits"
-      subtitle="The rules your funded account is judged against."
+      subtitle="Your account phase and the rules it's judged against."
     >
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <PctField
-            label="Daily loss limit"
-            hint="Max loss in a single day."
-            value={draft.daily_loss_pct}
-            onChange={(n) => setField("daily_loss_pct", n)}
+      <div className="space-y-5">
+        {/* Trading phase — top-level mode for the whole account.
+            Not wrapped in <label>: a stray label click would otherwise toggle
+            the segmented control when tapping the tooltip. */}
+        <div className="flex flex-col gap-2">
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-content-secondary">
+            Trading phase
+            <Tooltip content={PHASE_TOOLTIP}>
+              <InfoGlyph />
+            </Tooltip>
+          </span>
+          <Segmented<AccountPhase>
+            size="lg"
+            value={draft.account_phase}
+            onChange={(v) => setField("account_phase", v)}
+            options={[
+              { label: <PhaseLabel title="Challenge" tag="Evaluation" />, value: "challenge" },
+              { label: <PhaseLabel title="Funded" tag="Live" />, value: "funded" },
+            ]}
           />
-          <PctField
-            label="Trailing drawdown"
-            hint="Max drawdown from the peak."
-            value={draft.trailing_dd_pct}
-            onChange={(n) => setField("trailing_dd_pct", n)}
-          />
-          <PctField
-            label="Profit target"
-            hint="Goal to pass the challenge."
-            value={draft.profit_target_pct}
-            onChange={(n) => setField("profit_target_pct", n)}
-          />
+          <PhaseNote phase={draft.account_phase} />
+        </div>
+
+        <div className="border-t border-border-subtle pt-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <PctField
+              label="Daily loss limit"
+              hint="Max loss in a single day."
+              value={draft.daily_loss_pct}
+              onChange={(n) => setField("daily_loss_pct", n)}
+            />
+            <PctField
+              label="Trailing drawdown"
+              hint="Max drawdown from the peak."
+              value={draft.trailing_dd_pct}
+              onChange={(n) => setField("trailing_dd_pct", n)}
+            />
+            <PctField
+              label="Profit target"
+              hint="Goal to pass the challenge."
+              value={draft.profit_target_pct}
+              onChange={(n) => setField("profit_target_pct", n)}
+            />
+          </div>
         </div>
 
         {/* Not wrapped in <label>: a stray label click would otherwise toggle

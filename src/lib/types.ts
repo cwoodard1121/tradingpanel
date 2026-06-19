@@ -13,6 +13,7 @@ export const SESSION_PRESETS = ["Asia", "London", "New York", "AM", "PM"] as con
 export interface Trade {
   id: string;
   date: string; // 'YYYY-MM-DD'
+  time: string | null; // 'HH:MM' 24h — the time the trade was taken
   direction: Direction | null;
   result: TradeResult | null;
   pnl: number | null;
@@ -67,6 +68,8 @@ export interface Settings {
   profit_target_pct: number;
   trailing_mode: TrailingMode;
   challenge_price: number | null;
+  /** Which trading phase the user is currently in. */
+  account_phase: "challenge" | "funded";
   /** Account-balance quick-switch presets (client-managed). */
   balance_presets: number[];
 }

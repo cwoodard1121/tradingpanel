@@ -52,6 +52,7 @@ const KEY_SETTINGS = "sta_settings";
 // ---------------------------------------------------------------------
 const TRADE_COLUMNS = [
   "date",
+  "time",
   "direction",
   "result",
   "pnl",
@@ -85,6 +86,7 @@ const SETTINGS_COLUMNS = [
   "profit_target_pct",
   "trailing_mode",
   "challenge_price",
+  "account_phase",
   "balance_presets",
 ] as const satisfies readonly (keyof Settings)[];
 
@@ -148,6 +150,8 @@ function rowToTrade(r: Row): Trade {
   return {
     id: String(r.id ?? genId()),
     date,
+    // Tolerate older rows that predate the `time` column.
+    time: str(r.time),
     direction: asDirection(r.direction),
     result: asResult(r.result),
     pnl: num(r.pnl),
@@ -213,6 +217,10 @@ function rowToSettings(r: Row): Settings {
   }
   // challenge_price is legitimately nullable.
   partial.challenge_price = num(r.challenge_price);
+  // account_phase may be absent on older rows — normalizeSettings supplies the default.
+  if (r.account_phase === "challenge" || r.account_phase === "funded") {
+    partial.account_phase = r.account_phase;
+  }
   if (presets && presets.length > 0) partial.balance_presets = presets;
   return normalizeSettings(partial);
 }

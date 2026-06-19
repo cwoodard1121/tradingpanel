@@ -14,6 +14,7 @@ import type { Direction, Trade, TradeInput, TradeResult } from "@/lib/types";
 /** Snake_case Trade column set (sans id/created_at), in a sensible order. */
 export const TRADE_CSV_HEADERS: string[] = [
   "date",
+  "time",
   "direction",
   "result",
   "pnl",
@@ -147,6 +148,12 @@ const ALIAS_TO_COLUMN: Record<string, string> = {
   date: "date",
   tradedate: "date",
   day: "date",
+  // time
+  time: "time",
+  entrytime: "time",
+  tradetime: "time",
+  timeofday: "time",
+  hour: "time",
   // direction
   direction: "direction",
   side: "direction",
@@ -290,6 +297,39 @@ function parseDateValue(raw: string | undefined): string | null {
   return null;
 }
 
+function parseTimeValue(raw: string | undefined): string | null {
+  if (raw === undefined) return null;
+  const s = raw.trim();
+  if (s === "") return null;
+
+  // 12-hour clock with an AM/PM marker, e.g. "9:05 AM", "12:30pm", "9 PM".
+  const ampm = s.match(/^(\d{1,2})(?::(\d{1,2}))?\s*([AaPp])\.?[Mm]\.?$/);
+  if (ampm) {
+    let h = Number(ampm[1]);
+    const min = ampm[2] !== undefined ? Number(ampm[2]) : 0;
+    const isPm = ampm[3].toLowerCase() === "p";
+    if (h >= 1 && h <= 12 && min >= 0 && min <= 59) {
+      if (h === 12) h = 0;
+      if (isPm) h += 12;
+      return `${pad2(h)}:${pad2(min)}`;
+    }
+    // Out-of-range 12h value — fall through to keep the raw token.
+  }
+
+  // 24-hour clock, e.g. "14:30", "9:05", optionally with seconds "14:30:00".
+  const hm = s.match(/^(\d{1,2}):(\d{1,2})(?::\d{1,2})?$/);
+  if (hm) {
+    const h = Number(hm[1]);
+    const min = Number(hm[2]);
+    if (h >= 0 && h <= 23 && min >= 0 && min <= 59) {
+      return `${pad2(h)}:${pad2(min)}`;
+    }
+  }
+
+  // Unrecognized shape — keep the raw value so nothing is silently lost.
+  return s;
+}
+
 function parseNum(raw: string | undefined): number | null {
   if (raw === undefined) return null;
   let s = raw.trim();
@@ -402,6 +442,7 @@ export function parseTradesCsv(text: string): {
 
     const trade: TradeInput = {
       date,
+      time: parseTimeValue(record.time),
       direction: parseDirection(record.direction),
       result: parseResult(record.result),
       pnl: parseNum(record.pnl),

@@ -4,7 +4,7 @@
 // =====================================================================
 
 import type { Settings, Trade } from "./types";
-import { chronological, hasPnl } from "./stats";
+import { chronological, hasPnl, parseDate } from "./stats";
 
 export interface ConsistencyInfo {
   /** (bestDayProfit / totalProfit) * 100; null when there's no profit yet. */
@@ -57,14 +57,33 @@ export interface PayoutInfo {
   ready: boolean;
 }
 
+export interface ChallengeProgress {
+  targetAmount: number; // = profitTarget.targetAmount (balance * profit_target_pct/100)
+  current: number; // total net pnl
+  remaining: number; // max(0, target - current)
+  progress: number; // current/target (0..1+)
+  conditions: {
+    profitTargetReached: boolean;
+    dailyLossOk: boolean;
+    trailingOk: boolean;
+    consistencyOk: boolean;
+  };
+  passReady: boolean; // all four conditions true
+  avgDailyProfit: number; // pace: totalPnl / span-days (first..last closed trade date inclusive, >=1)
+  etaDays: number | null; // remaining>0 && avgDailyProfit>0 ? remaining/avgDailyProfit : (remaining===0 ? 0 : null)
+  etaDate: string | null; // now advanced by etaDays days, "YYYY-MM-DD"; null when etaDays null
+}
+
 export interface PropFirmStatus {
   balance: number;
   totalPnl: number;
+  phase: "challenge" | "funded";
   consistency: ConsistencyInfo;
   dailyLoss: DailyLossInfo;
   trailing: TrailingDdInfo;
   profitTarget: ProfitTargetInfo;
   payout: PayoutInfo;
+  challenge: ChallengeProgress;
 }
 
 interface DayAgg {
@@ -190,13 +209,79 @@ export function computePropFirm(
     ready: passing && profitableDays >= profitableDaysRequired,
   };
 
+  // ---- Challenge progress (phase-aware) ----------------------------
+  const phase: "challenge" | "funded" =
+    settings.account_phase === "funded" ? "funded" : "challenge";
+
+  const challengeCurrent = totalPnl;
+  const challengeRemaining = Math.max(0, targetAmount - challengeCurrent);
+  const challengeProgress = targetAmount > 0 ? challengeCurrent / targetAmount : 0;
+
+  // Worst single calendar-day loss (positive magnitude; 0 if no losing day).
+  let worstDayLoss = 0;
+  for (const d of days) {
+    if (d.pnl < 0 && -d.pnl > worstDayLoss) worstDayLoss = -d.pnl;
+  }
+
+  const conditions = {
+    profitTargetReached: challengeCurrent >= targetAmount && targetAmount > 0,
+    dailyLossOk: worstDayLoss < dlLimit,
+    trailingOk: !trailing.breached,
+    consistencyOk: passing,
+  };
+  const passReady =
+    conditions.profitTargetReached &&
+    conditions.dailyLossOk &&
+    conditions.trailingOk &&
+    conditions.consistencyOk;
+
+  // Pace: net pnl spread over the inclusive span of trading days (>= 1 day).
+  let spanDays = 1;
+  if (days.length > 0) {
+    const first = parseDate(days[0].date).getTime();
+    const last = parseDate(days[days.length - 1].date).getTime();
+    spanDays = Math.max(1, (last - first) / 86400000 + 1);
+  }
+  const avgDailyProfit = totalPnl / spanDays;
+
+  let etaDays: number | null;
+  if (challengeRemaining > 0 && avgDailyProfit > 0) {
+    etaDays = challengeRemaining / avgDailyProfit;
+  } else if (challengeRemaining === 0) {
+    etaDays = 0;
+  } else {
+    etaDays = null;
+  }
+
+  let etaDate: string | null = null;
+  if (etaDays !== null) {
+    const eta = new Date(now.getTime() + etaDays * 86400000);
+    etaDate = `${eta.getUTCFullYear()}-${String(eta.getUTCMonth() + 1).padStart(2, "0")}-${String(
+      eta.getUTCDate(),
+    ).padStart(2, "0")}`;
+  }
+
+  const challenge: ChallengeProgress = {
+    targetAmount,
+    current: challengeCurrent,
+    remaining: challengeRemaining,
+    progress: challengeProgress,
+    conditions,
+    passReady,
+    avgDailyProfit,
+    etaDays,
+    etaDate,
+  };
+
   return {
     balance,
     totalPnl,
+    phase,
     consistency,
     dailyLoss,
     trailing,
     profitTarget,
     payout,
+    challenge,
   };
 }

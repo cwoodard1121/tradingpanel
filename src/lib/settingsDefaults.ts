@@ -13,6 +13,7 @@ export const DEFAULT_SETTINGS: Settings = {
   profit_target_pct: 6,
   trailing_mode: "peak",
   challenge_price: null,
+  account_phase: "challenge",
   balance_presets: [25000, 200000],
 };
 
@@ -22,6 +23,7 @@ export function normalizeSettings(raw: Partial<Settings> | null | undefined): Se
   // Guard the enums and arrays.
   if (s.fee_mode !== "percent" && s.fee_mode !== "fixed") s.fee_mode = "percent";
   if (s.trailing_mode !== "peak" && s.trailing_mode !== "lock_at_start") s.trailing_mode = "peak";
+  if (s.account_phase !== "challenge" && s.account_phase !== "funded") s.account_phase = "challenge";
   if (!Array.isArray(s.balance_presets) || s.balance_presets.length === 0) {
     s.balance_presets = [...DEFAULT_SETTINGS.balance_presets];
   }

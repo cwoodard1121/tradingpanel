@@ -2,10 +2,24 @@
 
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/supabase";
 import type { Backend } from "@/lib/types";
 
 export interface DataBackupCardProps {
   backend: Backend;
+}
+
+/** A single env-var detection row (value never shown — only whether it's present). */
+function EnvRow({ label, ok }: { label: string; ok: boolean }) {
+  return (
+    <li className="flex items-center gap-2 font-mono text-[11px]">
+      <span className={ok ? "text-profit" : "text-loss"}>{ok ? "✓" : "✗"}</span>
+      <span className="truncate text-content-secondary">{label}</span>
+      <span className={["ml-auto shrink-0", ok ? "text-profit" : "text-loss"].join(" ")}>
+        {ok ? "detected" : "missing"}
+      </span>
+    </li>
+  );
 }
 
 function DownloadIcon() {
@@ -33,6 +47,8 @@ function DownloadIcon() {
  */
 export function DataBackupCard({ backend }: DataBackupCardProps) {
   const synced = backend === "supabase";
+  const hasUrl = SUPABASE_URL.trim().length > 0;
+  const hasKey = SUPABASE_ANON_KEY.trim().length > 0;
 
   return (
     <Card title="Data & backup" subtitle="Where your trades live and how to keep them safe.">
@@ -58,6 +74,20 @@ export function DataBackupCard({ backend }: DataBackupCardProps) {
             {synced ? "Synced" : "Local"}
           </Badge>
         </div>
+
+        {!synced && (
+          <div className="rounded-xl border border-border-subtle bg-bg-base/40 px-4 py-3.5">
+            <p className="text-sm font-medium text-content-primary">Supabase connection</p>
+            <p className="mt-1 text-xs text-content-secondary">
+              To sync to the cloud, both must be set with these exact names in your
+              host&apos;s Production environment, then redeploy.
+            </p>
+            <ul className="mt-2.5 space-y-1.5">
+              <EnvRow label="NEXT_PUBLIC_SUPABASE_URL" ok={hasUrl} />
+              <EnvRow label="NEXT_PUBLIC_SUPABASE_ANON_KEY" ok={hasKey} />
+            </ul>
+          </div>
+        )}
 
         <div
           className={[

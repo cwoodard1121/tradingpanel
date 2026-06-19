@@ -1,7 +1,14 @@
 // =====================================================================
-//  Section H — prop-firm panel. Surfaces the funded-account guardrails:
-//  consistency, daily loss limit, trailing max drawdown, profit target
-//  and overall payout readiness.
+//  Section H — phase-aware prop-firm panel.
+//
+//  CHALLENGE / EVALUATION phase leads with a "Progress to live account"
+//  hero, a pass-condition checklist and a "Time to live account" ETA,
+//  then surfaces the consistency / daily-loss / trailing-drawdown
+//  guardrails beneath.
+//
+//  FUNDED / LIVE phase leads with payout readiness, keeps daily-loss and
+//  trailing-drawdown front and centre, and softens the profit target into
+//  a payout goal.
 // =====================================================================
 
 import type { ReactNode } from "react";
@@ -12,11 +19,22 @@ import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { MiniStat } from "@/components/analytics/MiniStat";
 import type { PropFirmStatus } from "@/lib/propfirm";
-import { fmtDate, fmtNumber, fmtPct, fmtPnl, fmtUsd } from "@/lib/format";
+import { fmtDate, fmtDateShort, fmtNumber, fmtPct, fmtPnl, fmtUsd } from "@/lib/format";
 
 type ClassValue = string | false | null | undefined;
 function cn(...classes: ClassValue[]): string {
   return classes.filter(Boolean).join(" ");
+}
+
+/** Human ETA from a fractional day count. */
+function formatEta(days: number): string {
+  if (days <= 0) return "Now";
+  const d = Math.round(days);
+  if (d <= 1) return "≈ 1 day";
+  if (d <= 45) return `≈ ${fmtNumber(d)} days`;
+  const weeks = Math.round(days / 7);
+  if (weeks <= 12) return `≈ ${fmtNumber(weeks)} weeks`;
+  return `≈ ${fmtNumber(Math.round(days / 30))} months`;
 }
 
 // ---------------------------------------------------------------------
@@ -67,9 +85,7 @@ function RuleCard({
             </Tooltip>
           )}
         </h4>
-        {badge != null && (
-          <Badge tone={statusBadgeTone[status]}>{badge}</Badge>
-        )}
+        {badge != null && <Badge tone={statusBadgeTone[status]}>{badge}</Badge>}
       </div>
       {children}
     </div>
@@ -118,15 +134,13 @@ function Line({
   return (
     <div className="flex items-center justify-between gap-3 text-xs">
       <span className="text-content-secondary">{label}</span>
-      <span className={cn("font-mono font-medium tabular-nums", toneClass)}>
-        {value}
-      </span>
+      <span className={cn("font-mono font-medium tabular-nums", toneClass)}>{value}</span>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------
-//  Payout-readiness banner
+//  Check glyphs
 // ---------------------------------------------------------------------
 function CheckIcon({ ok }: { ok: boolean }) {
   return ok ? (
@@ -160,6 +174,261 @@ function CheckIcon({ ok }: { ok: boolean }) {
   );
 }
 
+/** Checkbox-style tick (✓) / empty (▢) for the pass checklist. */
+function CheckboxIcon({ done }: { done: boolean }) {
+  return done ? (
+    <span
+      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-profit/15 text-profit ring-1 ring-inset ring-profit/30"
+      aria-hidden="true"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-3 w-3"
+      >
+        <path d="M20 6 9 17l-5-5" />
+      </svg>
+    </span>
+  ) : (
+    <span
+      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-border-strong bg-bg-elevated"
+      aria-hidden="true"
+    />
+  );
+}
+
+// ---------------------------------------------------------------------
+//  CHALLENGE — "Progress to live account" hero
+// ---------------------------------------------------------------------
+function ProgressHero({ pf }: { pf: PropFirmStatus }) {
+  const ch = pf.challenge;
+  const pct = ch.progress * 100;
+  const ready = ch.passReady;
+
+  return (
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-2xl border p-5",
+        ready
+          ? "border-profit/30 bg-gradient-to-br from-profit-soft via-bg-elevated/40 to-bg-elevated/20 shadow-[0_0_0_1px_rgba(34,197,94,0.25),0_4px_24px_rgba(34,197,94,0.12)]"
+          : "border-brand/25 bg-gradient-to-br from-brand-soft via-bg-elevated/40 to-bg-elevated/20 shadow-glow",
+      )}
+    >
+      <div
+        className={cn(
+          "pointer-events-none absolute -right-16 -top-20 h-48 w-48 rounded-full blur-3xl",
+          ready ? "bg-profit/10" : "bg-brand/10",
+        )}
+        aria-hidden="true"
+      />
+
+      <div className="relative flex flex-col gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-content-secondary">
+              Progress to live account
+            </span>
+            <div className="mt-1 flex items-baseline gap-2">
+              <span className="font-mono text-4xl font-semibold tracking-tight tabular-nums text-content-primary">
+                {fmtPct(pct, { decimals: 0 })}
+              </span>
+              <span className="text-sm text-content-secondary">to a live account</span>
+            </div>
+          </div>
+          <Badge
+            tone={ready ? "profit" : "brand"}
+            className="self-start whitespace-normal text-left"
+          >
+            {ready ? "Pass-ready → advance to live account" : "Challenge in progress"}
+          </Badge>
+        </div>
+
+        <ProgressBar
+          value={Math.max(0, ch.current)}
+          max={ch.targetAmount > 0 ? ch.targetAmount : 1}
+          tone={ready ? "profit" : "brand"}
+        />
+
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs">
+          <span className="font-mono tabular-nums text-content-secondary">
+            {fmtPnl(ch.current)}{" "}
+            <span className="text-content-muted">/ {fmtUsd(ch.targetAmount)} target</span>
+          </span>
+          <span className="font-mono tabular-nums">
+            {ch.remaining > 0 ? (
+              <>
+                <span className="text-warn">{fmtUsd(ch.remaining)}</span>
+                <span className="text-content-muted"> to a live account</span>
+              </>
+            ) : (
+              <span className="text-profit">Profit target cleared</span>
+            )}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------
+//  CHALLENGE — pass-condition checklist
+// ---------------------------------------------------------------------
+function PassChecklist({ pf }: { pf: PropFirmStatus }) {
+  const ch = pf.challenge;
+  const c = ch.conditions;
+  const score = pf.consistency.score;
+
+  const items: { label: string; done: boolean; detail: string }[] = [
+    {
+      label: "Profit target reached",
+      done: c.profitTargetReached,
+      detail: `${fmtPnl(ch.current)} / ${fmtUsd(ch.targetAmount)}`,
+    },
+    {
+      label: "Daily-loss limit never breached",
+      done: c.dailyLossOk,
+      detail: `cap -${fmtUsd(pf.dailyLoss.limit)}/day`,
+    },
+    {
+      label: "Trailing drawdown respected",
+      done: c.trailingOk,
+      detail: `floor ${fmtUsd(pf.trailing.ddLine)}`,
+    },
+    {
+      label: `Consistency ≤ ${fmtNumber(pf.consistency.threshold)}%`,
+      done: c.consistencyOk,
+      detail: score !== null ? fmtPct(score) : "—",
+    },
+  ];
+  const cleared = items.filter((i) => i.done).length;
+  const allOk = cleared === items.length;
+
+  return (
+    <div
+      className={cn(
+        "flex flex-col gap-3 rounded-xl border bg-bg-elevated/50 p-4",
+        allOk ? statusRing.ok : statusRing.neutral,
+      )}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <h4 className="text-[11px] font-semibold uppercase tracking-wide text-content-secondary">
+          Pass checklist
+        </h4>
+        <Badge tone={allOk ? "profit" : "default"}>
+          {fmtNumber(cleared)}/{fmtNumber(items.length)} cleared
+        </Badge>
+      </div>
+
+      <ul className="space-y-0.5">
+        {items.map((it) => (
+          <li
+            key={it.label}
+            className="flex items-center gap-3 rounded-lg px-1.5 py-1.5 transition-colors hover:bg-bg-hover"
+          >
+            <CheckboxIcon done={it.done} />
+            <span
+              className={cn(
+                "min-w-0 flex-1 truncate text-xs font-medium",
+                it.done ? "text-content-primary" : "text-content-secondary",
+              )}
+            >
+              {it.label}
+            </span>
+            <span
+              className={cn(
+                "shrink-0 font-mono text-[11px] tabular-nums",
+                it.done ? "text-profit" : "text-content-muted",
+              )}
+            >
+              {it.detail}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------
+//  CHALLENGE — "Time to live account" ETA
+// ---------------------------------------------------------------------
+function EtaCard({ pf }: { pf: PropFirmStatus }) {
+  const ch = pf.challenge;
+  const hasEta = ch.etaDays !== null;
+  const reached = ch.etaDays === 0;
+  const status: RuleStatus = ch.passReady || reached ? "ok" : hasEta ? "neutral" : "warn";
+  const paceTone =
+    ch.avgDailyProfit > 0 ? "text-profit" : ch.avgDailyProfit < 0 ? "text-loss" : "text-content-muted";
+
+  return (
+    <div
+      className={cn(
+        "flex flex-col gap-3 rounded-xl border bg-bg-elevated/50 p-4",
+        statusRing[status],
+      )}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <h4 className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-content-secondary">
+          Time to live account
+          <Tooltip content="Projected from your average daily profit across your trading span. A pace estimate, not a guarantee.">
+            <InfoGlyph />
+          </Tooltip>
+        </h4>
+        {reached ? (
+          <Badge tone="profit">Reached</Badge>
+        ) : hasEta ? (
+          <Badge tone="brand">On pace</Badge>
+        ) : (
+          <Badge tone="warn">No ETA</Badge>
+        )}
+      </div>
+
+      {reached ? (
+        <>
+          <div className="font-mono text-3xl font-semibold tracking-tight tabular-nums text-profit">
+            Now
+          </div>
+          <p className="text-xs text-profit">
+            Profit target reached — clear any open checks and advance to a live account.
+          </p>
+        </>
+      ) : hasEta ? (
+        <>
+          <div className="flex items-baseline gap-2">
+            <span className="font-mono text-3xl font-semibold tracking-tight tabular-nums text-content-primary">
+              {formatEta(ch.etaDays as number)}
+            </span>
+            <span className="font-mono text-sm tabular-nums text-content-secondary">
+              ~{fmtDateShort(ch.etaDate)}
+            </span>
+          </div>
+          <p className="text-xs text-content-secondary">
+            At <span className={cn("font-mono tabular-nums", paceTone)}>{fmtPnl(ch.avgDailyProfit)}</span>
+            /day pace, {fmtUsd(ch.remaining)} of target remains.
+          </p>
+        </>
+      ) : (
+        <>
+          <div className="font-mono text-3xl font-semibold tracking-tight tabular-nums text-content-muted">
+            —
+          </div>
+          <p className="text-xs text-content-muted">
+            Need more profitable history to project a live-account date. Bank a few green days
+            and a pace appears here.
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------
+//  FUNDED — payout-readiness banner
+// ---------------------------------------------------------------------
 function PayoutBanner({ pf }: { pf: PropFirmStatus }) {
   const { payout } = pf;
   const ready = payout.ready;
@@ -169,9 +438,7 @@ function PayoutBanner({ pf }: { pf: PropFirmStatus }) {
     <div
       className={cn(
         "flex flex-col gap-4 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between",
-        ready
-          ? "border-profit/30 bg-profit-soft"
-          : "border-border-subtle bg-bg-elevated/50",
+        ready ? "border-profit/30 bg-profit-soft" : "border-border-subtle bg-bg-elevated/50",
       )}
     >
       <div className="flex items-center gap-3">
@@ -214,7 +481,7 @@ function PayoutBanner({ pf }: { pf: PropFirmStatus }) {
 }
 
 // ---------------------------------------------------------------------
-//  Rule cards
+//  Shared rule cards
 // ---------------------------------------------------------------------
 function ConsistencyCard({ pf }: { pf: PropFirmStatus }) {
   const c = pf.consistency;
@@ -259,8 +526,7 @@ function ConsistencyCard({ pf }: { pf: PropFirmStatus }) {
         </p>
       ) : (
         <p className="text-xs text-warn">
-          {fmtUsd(c.profitNeededToClear)} more profit to clear the{" "}
-          {fmtNumber(c.threshold)}% rule.
+          {fmtUsd(c.profitNeededToClear)} more profit to clear the {fmtNumber(c.threshold)}% rule.
         </p>
       )}
     </RuleCard>
@@ -269,11 +535,7 @@ function ConsistencyCard({ pf }: { pf: PropFirmStatus }) {
 
 function DailyLossCard({ pf }: { pf: PropFirmStatus }) {
   const d = pf.dailyLoss;
-  const status: RuleStatus = d.breached
-    ? "danger"
-    : d.bufferPct < 0.25
-      ? "warn"
-      : "ok";
+  const status: RuleStatus = d.breached ? "danger" : d.bufferPct < 0.25 ? "warn" : "ok";
   const bufferTone = d.breached ? "loss" : d.bufferPct < 0.25 ? "warn" : "profit";
 
   return (
@@ -307,11 +569,7 @@ function DailyLossCard({ pf }: { pf: PropFirmStatus }) {
 
 function TrailingDdCard({ pf }: { pf: PropFirmStatus }) {
   const t = pf.trailing;
-  const status: RuleStatus = t.breached
-    ? "danger"
-    : t.bufferPct < 0.25
-      ? "warn"
-      : "ok";
+  const status: RuleStatus = t.breached ? "danger" : t.bufferPct < 0.25 ? "warn" : "ok";
   const bufferTone = t.breached ? "loss" : t.bufferPct < 0.25 ? "warn" : "profit";
   const modeLabel = t.mode === "peak" ? "Trails peak" : "Locks at start";
 
@@ -350,17 +608,21 @@ function TrailingDdCard({ pf }: { pf: PropFirmStatus }) {
   );
 }
 
-function ProfitTargetCard({ pf }: { pf: PropFirmStatus }) {
+function ProfitTargetCard({ pf, funded = false }: { pf: PropFirmStatus; funded?: boolean }) {
   const p = pf.profitTarget;
   const status: RuleStatus = p.reached ? "ok" : "neutral";
   const pct = p.targetAmount > 0 ? p.progress * 100 : 0;
 
   return (
     <RuleCard
-      title="Profit target"
+      title={funded ? "Payout goal" : "Profit target"}
       status={status}
       badge={p.reached ? "Reached" : `${fmtPct(p.pct)} goal`}
-      hint="Net profit required to pass the evaluation / unlock the next phase."
+      hint={
+        funded
+          ? "A soft milestone toward your next payout — not a pass/fail line now that you're funded."
+          : "Net profit required to pass the evaluation / unlock the next phase."
+      }
     >
       <div className="space-y-1.5">
         <Line
@@ -368,11 +630,11 @@ function ProfitTargetCard({ pf }: { pf: PropFirmStatus }) {
           value={fmtPnl(p.current)}
           tone={p.current > 0 ? "profit" : p.current < 0 ? "loss" : undefined}
         />
-        <Line label="Target" value={fmtUsd(p.targetAmount)} tone="muted" />
+        <Line label={funded ? "Goal" : "Target"} value={fmtUsd(p.targetAmount)} tone="muted" />
         <Line
           label="Remaining"
           value={p.reached ? "—" : fmtUsd(p.remaining)}
-          tone={p.reached ? "profit" : "warn"}
+          tone={p.reached ? "profit" : funded ? "muted" : "warn"}
         />
       </div>
       <ProgressBar
@@ -381,7 +643,7 @@ function ProfitTargetCard({ pf }: { pf: PropFirmStatus }) {
         tone={p.reached ? "profit" : "brand"}
       />
       <p className="text-right font-mono text-xs tabular-nums text-content-secondary">
-        {fmtPct(pct, { decimals: 0 })} of target
+        {fmtPct(pct, { decimals: 0 })} of {funded ? "payout goal" : "target"}
       </p>
     </RuleCard>
   );
@@ -391,22 +653,59 @@ function ProfitTargetCard({ pf }: { pf: PropFirmStatus }) {
 //  Panel
 // ---------------------------------------------------------------------
 export function PropFirmPanel({ pf }: { pf: PropFirmStatus }) {
+  const isChallenge = pf.phase === "challenge";
+
   return (
     <Card
       title="Prop firm"
-      subtitle={`Funded-account guardrails on a ${fmtUsd(pf.balance, {
-        decimals: 0,
-      })} account`}
+      subtitle={`${isChallenge ? "Challenge" : "Funded-account"} guardrails on a ${fmtUsd(
+        pf.balance,
+        { decimals: 0 },
+      )} account`}
+      right={
+        <Badge tone={isChallenge ? "brand" : "profit"}>
+          <span
+            className={cn(
+              "inline-block h-1.5 w-1.5 rounded-full",
+              isChallenge ? "bg-brand" : "bg-profit",
+            )}
+            aria-hidden="true"
+          />
+          {isChallenge ? "Challenge / Evaluation" : "Funded / Live"}
+        </Badge>
+      }
     >
       <div className="space-y-4">
-        <PayoutBanner pf={pf} />
+        {isChallenge ? (
+          <>
+            <ProgressHero pf={pf} />
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <ConsistencyCard pf={pf} />
-          <DailyLossCard pf={pf} />
-          <TrailingDdCard pf={pf} />
-          <ProfitTargetCard pf={pf} />
-        </div>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <PassChecklist pf={pf} />
+              <EtaCard pf={pf} />
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <ConsistencyCard pf={pf} />
+              <DailyLossCard pf={pf} />
+              <TrailingDdCard pf={pf} />
+            </div>
+          </>
+        ) : (
+          <>
+            <PayoutBanner pf={pf} />
+
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <DailyLossCard pf={pf} />
+              <TrailingDdCard pf={pf} />
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <ConsistencyCard pf={pf} />
+              <ProfitTargetCard pf={pf} funded />
+            </div>
+          </>
+        )}
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <MiniStat
@@ -432,9 +731,7 @@ export function PropFirmPanel({ pf }: { pf: PropFirmStatus }) {
             )}`}
             sub={`≥ ${fmtUsd(pf.payout.minProfitableDayAmount)} each`}
             tone={
-              pf.payout.profitableDays >= pf.payout.profitableDaysRequired
-                ? "profit"
-                : "warn"
+              pf.payout.profitableDays >= pf.payout.profitableDaysRequired ? "profit" : "warn"
             }
           />
         </div>

@@ -120,6 +120,7 @@ export interface Stats {
   bySession: GroupStat[];
   byDayOfWeek: GroupStat[];
   byDirection: GroupStat[];
+  byTimeOfDay: GroupStat[]; // 4-hour windows; only trades that have a time
 
   // curve + drawdown
   equityCurve: EquityPoint[];
@@ -147,6 +148,18 @@ export interface Stats {
 }
 
 const DOW_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/** 4-hour time-of-day windows; index = floor(hour / 4). */
+const TOD_LABELS = ["00–04", "04–08", "08–12", "12–16", "16–20", "20–24"];
+
+/** Extract the leading hour (0–23) from a 'HH:MM' time string; null if absent/invalid. */
+function hourFromTime(time: string | null): number | null {
+  if (!time) return null;
+  const m = time.trim().match(/^(\d{1,2})/);
+  if (!m) return null;
+  const h = Number(m[1]);
+  return Number.isInteger(h) && h >= 0 && h <= 23 ? h : null;
+}
 
 function startOfWeekUTC(now: Date): Date {
   // Week starts Monday.
@@ -347,6 +360,19 @@ export function computeStats(
     .map(([k, ts]) => groupStat(k === "long" ? "Long" : k === "short" ? "Short" : k, ts))
     .sort((a, b) => b.trades - a.trades);
 
+  // ---- by time of day (4-hour windows) -----------------------------
+  const byTodMap = new Map<number, Trade[]>();
+  for (const t of closed) {
+    const hour = hourFromTime(t.time);
+    if (hour === null) continue; // trades without a usable time are skipped
+    const bucket = Math.floor(hour / 4);
+    if (!byTodMap.has(bucket)) byTodMap.set(bucket, []);
+    byTodMap.get(bucket)!.push(t);
+  }
+  const byTimeOfDay = [0, 1, 2, 3, 4, 5]
+    .filter((b) => byTodMap.has(b))
+    .map((b) => groupStat(TOD_LABELS[b], byTodMap.get(b)!));
+
   // ---- by calendar day ---------------------------------------------
   const dayMap = new Map<string, { pnl: number; trades: number }>();
   for (const t of closed) {
@@ -434,6 +460,7 @@ export function computeStats(
     bySession,
     byDayOfWeek,
     byDirection,
+    byTimeOfDay,
     equityCurve,
     maxDrawdownDollar,
     maxDrawdownPct: maxDrawdownPctAtPeak,

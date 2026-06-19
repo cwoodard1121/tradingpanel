@@ -45,6 +45,7 @@ export interface PrefillData {
 
 interface FormState {
   date: string;
+  time: string;
   direction: Direction | null;
   result: TradeResult | null;
   resultTouched: boolean;
@@ -96,6 +97,7 @@ function initState(
     const preset = isPreset(initial.session);
     return {
       date: initial.date,
+      time: initial.time ?? "",
       direction: initial.direction,
       result: initial.result,
       resultTouched: true,
@@ -123,6 +125,7 @@ function initState(
   }
   return {
     date: "",
+    time: "",
     direction: prefill?.direction ?? null,
     result: null,
     resultTouched: false,
@@ -267,6 +270,7 @@ export function TradeForm({
         : state.sessionPreset.trim() || null;
     return {
       date: state.date,
+      time: state.time.trim() || null,
       direction: state.direction,
       result: state.result,
       pnl: state.pnl,
@@ -379,19 +383,29 @@ export function TradeForm({
           </div>
         )}
 
-        {/* Date + Session */}
+        {/* Date + Time + Session */}
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Date" error={dateError ?? undefined}>
-            <Input
-              id="trade-date"
-              type="date"
-              value={form.date}
-              onChange={(e) => {
-                patch({ date: e.target.value });
-                if (e.target.value) setDateError(null);
-              }}
-            />
-          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Date" error={dateError ?? undefined}>
+              <Input
+                id="trade-date"
+                type="date"
+                value={form.date}
+                onChange={(e) => {
+                  patch({ date: e.target.value });
+                  if (e.target.value) setDateError(null);
+                }}
+              />
+            </Field>
+            <Field label="Time">
+              <Input
+                id="trade-time"
+                type="time"
+                value={form.time}
+                onChange={(e) => patch({ time: e.target.value })}
+              />
+            </Field>
+          </div>
           <Labeled label="Session">
             <Select
               value={sessionSelectValue}

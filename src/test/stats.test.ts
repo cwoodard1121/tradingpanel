@@ -8,6 +8,7 @@ function makeTrade(overrides: Partial<Trade> = {}): Trade {
   return {
     id: "t-0",
     date: "2026-01-01",
+    time: null,
     direction: null,
     result: null,
     pnl: null,

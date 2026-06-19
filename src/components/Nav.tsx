@@ -23,18 +23,16 @@ function iconBase(className?: string) {
   };
 }
 
-function CalculatorIcon({ className }: IconProps) {
+function TradeIcon({ className }: IconProps) {
+  // Candlestick pair — reads as a trading/markets glyph.
   return (
     <svg {...iconBase(className)}>
-      <rect x="4" y="3" width="16" height="18" rx="2.5" />
-      <line x1="8" y1="7" x2="16" y2="7" />
-      <line x1="8" y1="11.5" x2="8.01" y2="11.5" />
-      <line x1="12" y1="11.5" x2="12.01" y2="11.5" />
-      <line x1="16" y1="11.5" x2="16.01" y2="11.5" />
-      <line x1="8" y1="15" x2="8.01" y2="15" />
-      <line x1="12" y1="15" x2="12.01" y2="15" />
-      <line x1="16" y1="15" x2="16" y2="17.5" />
-      <line x1="8" y1="17.5" x2="12" y2="17.5" />
+      <line x1="8" y1="3" x2="8" y2="6.5" />
+      <rect x="6" y="6.5" width="4" height="7.5" rx="1" />
+      <line x1="8" y1="14" x2="8" y2="18" />
+      <line x1="16" y1="6" x2="16" y2="9.5" />
+      <rect x="14" y="9.5" width="4" height="6" rx="1" />
+      <line x1="16" y1="15.5" x2="16" y2="21" />
     </svg>
   );
 }
@@ -87,7 +85,7 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/", label: "Calculator", Icon: CalculatorIcon },
+  { href: "/", label: "Trade", Icon: TradeIcon },
   { href: "/journal", label: "Journal", Icon: JournalIcon },
   { href: "/analytics", label: "Analytics", Icon: AnalyticsIcon },
   { href: "/savings", label: "Savings", Icon: SavingsIcon },

@@ -26,6 +26,7 @@ import { DrawdownCards } from "@/components/analytics/DrawdownCards";
 import { WinLossDonut } from "@/components/analytics/WinLossDonut";
 import { RDistributionChart } from "@/components/analytics/RDistributionChart";
 import { Breakdowns } from "@/components/analytics/Breakdowns";
+import { TimeOfDayBreakdown } from "@/components/analytics/TimeOfDayBreakdown";
 import { DisciplineRow } from "@/components/analytics/DisciplineRow";
 import { PropFirmPanel } from "@/components/analytics/PropFirmPanel";
 import { AllTradesTable } from "@/components/analytics/AllTradesTable";
@@ -163,6 +164,9 @@ export default function AnalyticsPage() {
 
       {/* F — breakdowns */}
       <Breakdowns stats={stats} />
+
+      {/* F2 — time-of-day breakdown (renders only when timed trades exist) */}
+      <TimeOfDayBreakdown stats={stats} />
 
       {/* G — discipline */}
       <DisciplineRow stats={stats} />

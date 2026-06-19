@@ -111,6 +111,26 @@ export function CloseIcon(props: IconProps) {
   );
 }
 
+export function ClockIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7.5V12l3 2" />
+    </Base>
+  );
+}
+
+export function SortIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M7 4v16" />
+      <path d="m3.5 8 3.5-4 3.5 4" />
+      <path d="M17 20V4" />
+      <path d="m13.5 16 3.5 4 3.5-4" />
+    </Base>
+  );
+}
+
 export function JournalGlyph(props: IconProps) {
   return (
     <Base {...props}>
