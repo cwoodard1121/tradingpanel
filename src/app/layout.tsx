@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { DataProvider } from "@/components/providers/DataProvider";
 import { Nav } from "@/components/Nav";
+import { ServiceWorkerRegistrar } from "@/components/pwa/ServiceWorkerRegistrar";
 
 export const metadata: Metadata = {
   title: "BTC Risk & Journal",
@@ -9,12 +10,26 @@ export const metadata: Metadata = {
     "Personal Bitcoin trading toolkit — risk/position-size calculator, trade journal & prop-firm analytics for BTC day trading.",
   applicationName: "BTC Risk & Journal",
   formatDetection: { telephone: false },
+  manifest: "/manifest.webmanifest",
+  // Static on-brand icon shipped in public/ (full-bleed, maskable-safe).
+  // Used for the favicon and the iOS apple-touch-icon.
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    shortcut: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/icon.svg", type: "image/svg+xml" }],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "BTC Risk",
+  },
 };
 
 export const viewport: Viewport = {
   themeColor: "#0a0e14",
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -69,6 +84,7 @@ export default function RootLayout({
             </main>
           </div>
         </DataProvider>
+        <ServiceWorkerRegistrar />
       </body>
     </html>
   );

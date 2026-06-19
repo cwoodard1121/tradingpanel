@@ -1,0 +1,23 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="BTC Risk">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#121925"/>
+      <stop offset="1" stop-color="#070a0f"/>
+    </linearGradient>
+    <radialGradient id="coin" cx="0.34" cy="0.28" r="0.95">
+      <stop offset="0" stop-color="#ffb14d"/>
+      <stop offset="0.55" stop-color="#f7931a"/>
+      <stop offset="1" stop-color="#d97c08"/>
+    </radialGradient>
+  </defs>
+  <!-- Full-bleed solid base: guarantees no transparency is exposed when a
+       maskable platform crops the corners. -->
+  <rect width="512" height="512" fill="#0a0e14"/>
+  <!-- Subtle rounded dark tile for the un-cropped ("any") presentation. -->
+  <rect width="512" height="512" rx="116" fill="url(#tile)"/>
+  <!-- Bitcoin coin glyph, kept inside the central ~80% maskable safe zone.
+       The B symbol is a cut-out, so the dark tile reads through it. -->
+  <g transform="translate(71.68,71.68) scale(0.72)">
+    <path fill="url(#coin)" d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zm-141.651-35.33c4.937-32.999-20.191-50.739-54.55-62.573l11.146-44.702-27.213-6.781-10.851 43.524c-7.154-1.783-14.502-3.464-21.803-5.13l10.929-43.81-27.198-6.781-11.153 44.686c-5.922-1.349-11.735-2.683-17.377-4.087l.031-.14-37.53-9.371-7.239 29.062s20.191 4.627 19.765 4.913c11.022 2.751 13.014 10.044 12.68 15.825l-12.696 50.925c.76.194 1.744.473 2.829.907-.907-.225-1.876-.473-2.876-.713l-17.796 71.338c-1.349 3.348-4.767 8.37-12.471 6.464.271.395-19.78-4.937-19.78-4.937l-13.51 31.147 35.414 8.827c6.588 1.651 13.045 3.379 19.4 5.006l-11.262 45.213 27.182 6.781 11.153-44.733c7.43 2.016 14.641 3.876 21.694 5.627l-11.114 44.523 27.213 6.781 11.262-45.128c46.404 8.781 81.299 5.239 95.991-36.727 11.836-33.79-.589-53.281-25.005-65.991 17.78-4.098 31.174-15.792 34.747-39.949zm-62.177 87.179c-8.41 33.79-65.308 15.523-83.755 10.943l14.944-59.899c18.446 4.603 77.6 13.717 68.811 48.956zm8.417-87.667c-7.673 30.736-55.031 15.12-70.393 11.292l13.548-54.327c15.363 3.828 64.836 10.973 56.845 43.035z"/>
+  </g>
+</svg>

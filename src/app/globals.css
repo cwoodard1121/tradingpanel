@@ -17,6 +17,8 @@ html {
   color-scheme: dark;
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  /* Standalone PWA polish: no rubber-band / pull-to-refresh bounce. */
+  overscroll-behavior-y: none;
 }
 
 body {
@@ -24,6 +26,11 @@ body {
   font-family: var(--font-sans);
   /* Kill the grey tap flash on mobile for a native, premium feel. */
   -webkit-tap-highlight-color: transparent;
+  /* Standalone PWA polish: no rubber-band / pull-to-refresh bounce. */
+  overscroll-behavior-y: none;
+  /* Honour the device safe areas (viewport-fit=cover enables env() insets).
+     The fixed bottom tab bar in <Nav/> consumes env(safe-area-inset-bottom). */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* On-brand text selection. */
