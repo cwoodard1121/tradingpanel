@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-bg-base text-content-primary antialiased;
+  font-family: var(--font-sans);
+}
+
+/* Thin, dark scrollbars to match the terminal aesthetic. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a3647 transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #2a3647;
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #3a4a60;
+  background-clip: content-box;
+}
