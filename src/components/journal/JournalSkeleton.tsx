@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
  */
 export function JournalSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 lg:mx-[calc((62rem_-_min(100vw_-_2rem,88rem))_/_2)]">
       <div className="flex items-end justify-between gap-4">
         <div className="space-y-2">
           <Skeleton className="h-7 w-40" />
@@ -28,8 +28,8 @@ export function JournalSkeleton() {
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,440px)_minmax(0,1fr)]">
-        <div className="rounded-2xl border border-border-subtle bg-bg-surface p-5 shadow-card">
+      <div className="grid gap-6 2xl:grid-cols-[minmax(0,400px)_minmax(0,1fr)]">
+        <div className="w-full max-w-2xl rounded-2xl border border-border-subtle bg-bg-surface p-5 shadow-card 2xl:max-w-none">
           <Skeleton className="h-5 w-32" />
           <div className="mt-5 space-y-4">
             {Array.from({ length: 6 }).map((_, i) => (

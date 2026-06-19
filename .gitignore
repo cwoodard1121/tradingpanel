@@ -33,3 +33,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# personal data / local scripts (never commit trade logs)
+*.csv
+_import_trades.mjs

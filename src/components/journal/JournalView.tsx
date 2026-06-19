@@ -101,7 +101,10 @@ export function JournalView() {
   }
 
   return (
-    <div className="space-y-6">
+    // On large screens the journal breaks out past the global max-w-5xl
+    // container so the dense desktop blotter can use the horizontal space
+    // (capped at ~88rem, viewport-safe so it never overflows / scrolls).
+    <div className="space-y-6 lg:mx-[calc((62rem_-_min(100vw_-_2rem,88rem))_/_2)]">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
@@ -118,9 +121,14 @@ export function JournalView() {
       {/* KPI strip */}
       <JournalSummary trades={trades} loading={initializing} />
 
-      {/* Form + feed */}
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,440px)_minmax(0,1fr)] lg:items-start">
-        <div ref={formRef} className="lg:sticky lg:top-[5.5rem]">
+      {/* Form + feed. The blotter wants width, so the form only docks beside
+          the feed on very wide screens (2xl); below that it sits on top at a
+          comfortable max width while the table spans the full content area. */}
+      <div className="grid gap-6 2xl:grid-cols-[minmax(0,400px)_minmax(0,1fr)] 2xl:items-start">
+        <div
+          ref={formRef}
+          className="w-full max-w-2xl 2xl:max-w-none 2xl:sticky 2xl:top-[5.5rem]"
+        >
           <TradeForm
             key={editing?.id ?? "new"}
             initial={editing}
