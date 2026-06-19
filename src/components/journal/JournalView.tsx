@@ -124,10 +124,10 @@ export function JournalView() {
       {/* Form + feed. The blotter wants width, so the form only docks beside
           the feed on very wide screens (2xl); below that it sits on top at a
           comfortable max width while the table spans the full content area. */}
-      <div className="grid gap-6 2xl:grid-cols-[minmax(0,400px)_minmax(0,1fr)] 2xl:items-start">
+      <div className="grid gap-6 2xl:grid-cols-[minmax(0,480px)_minmax(0,1fr)] 2xl:items-start">
         <div
           ref={formRef}
-          className="w-full max-w-2xl 2xl:max-w-none 2xl:sticky 2xl:top-[5.5rem]"
+          className="w-full max-w-3xl 2xl:max-w-none 2xl:sticky 2xl:top-[5.5rem]"
         >
           <TradeForm
             key={editing?.id ?? "new"}
