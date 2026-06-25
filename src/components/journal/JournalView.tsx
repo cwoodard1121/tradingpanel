@@ -26,6 +26,12 @@ function numParam(v: string | null): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function strParam(v: string | null): string | null {
+  if (v == null) return null;
+  const t = v.trim();
+  return t === "" ? null : t;
+}
+
 /**
  * JournalView — orchestrates the trade journal: prefill from the calculator,
  * the add/edit form, the trade feed, CSV import/export and delete confirms.
@@ -59,6 +65,7 @@ export function JournalView() {
       stop: numParam(params.get("stop")),
       target: numParam(params.get("target")),
       size_btc: numParam(params.get("size_btc")),
+      tv_url: strParam(params.get("tv_url")),
     };
   }, [params]);
 

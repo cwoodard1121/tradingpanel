@@ -47,7 +47,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Segmented } from "@/components/ui/Segmented";
 import { Toggle } from "@/components/ui/Toggle";
-import { Field, NumberInput } from "@/components/ui/Input";
+import { Field, Input, NumberInput } from "@/components/ui/Input";
 import { StatCard } from "@/components/ui/StatCard";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { CopyButton } from "@/components/calculator/CopyButton";
@@ -238,6 +238,7 @@ export function RiskCalculator() {
   const [entry, setEntry] = useState<number | null>(null);
   const [stop, setStop] = useState<number | null>(null);
   const [rr, setRr] = useState<number | null>(2);
+  const [screenshotUrl, setScreenshotUrl] = useState("");
 
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [leverage, setLeverage] = useState<number | null>(
@@ -330,6 +331,7 @@ export function RiskCalculator() {
     setEntry(null);
     setStop(null);
     setRr(2);
+    setScreenshotUrl("");
   }, []);
 
   // ---- "Log this trade" → journal prefill (URL CONTRACT) ------------
@@ -344,8 +346,9 @@ export function RiskCalculator() {
     if (stop != null) p.set("stop", String(stop));
     if (result.target != null) p.set("target", String(result.target));
     p.set("size_btc", String(result.sizeBtc));
+    if (screenshotUrl.trim()) p.set("tv_url", screenshotUrl.trim());
     router.push(`/journal?${p.toString()}`);
-  }, [result, riskPct, entry, stop, router]);
+  }, [result, riskPct, entry, stop, screenshotUrl, router]);
 
   const hasSpread = entry != null && stop != null;
   const feeNote =
@@ -532,6 +535,26 @@ export function RiskCalculator() {
                   at {fmtNumber(rr ?? 2, 1)}R.
                 </p>
               </div>
+            </div>
+
+            <div className="h-px bg-border-subtle" />
+
+            {/* --- Screenshot (optional, carries into the journal) --- */}
+            <div className="space-y-3">
+              <SectionLabel>Screenshot</SectionLabel>
+              <Field
+                label="Chart / screenshot link"
+                hint="Optional — paste it now and it carries over when you log the trade."
+              >
+                <Input
+                  type="url"
+                  inputMode="url"
+                  autoComplete="off"
+                  placeholder="https://www.tradingview.com/x/…"
+                  value={screenshotUrl}
+                  onChange={(e) => setScreenshotUrl(e.target.value)}
+                />
+              </Field>
             </div>
 
             {/* --- Advanced (leverage & fees) --- */}

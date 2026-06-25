@@ -41,6 +41,7 @@ export interface PrefillData {
   stop: number | null;
   target: number | null;
   size_btc: number | null;
+  tv_url: string | null;
 }
 
 interface FormState {
@@ -145,7 +146,7 @@ function initState(
     stop: prefill?.stop ?? null,
     target: prefill?.target ?? null,
     size_btc: prefill?.size_btc ?? null,
-    tv_url: "",
+    tv_url: prefill?.tv_url ?? "",
     atas_url: "",
     after_url: "",
     notes: "",
